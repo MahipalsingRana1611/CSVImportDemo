@@ -30,3 +30,25 @@ $("#"+portletNamespace+"goods-data-table").DataTable({
 		}
 	],
 });
+
+/*
+ * Method to open modal pop for upload file
+ */
+function openModal(modelDataId) {
+	var content = $("#"+modelDataId).html();
+	AUI().use(
+	  'aui-modal',
+	  function(A) {
+	    var modal = new A.Modal(
+	      {
+	        bodyContent: content,
+	        centered: true,
+	        headerContent: '<b>CSV File Upload</b>',
+	        render: '#modalRenderer',
+	        zIndex: 1100,
+	        centered: true
+	      }
+	    ).render();
+	  }
+	);
+}
