@@ -1,0 +1,9 @@
+Bundle-Name: csv-import-module-api
+Bundle-SymbolicName: com.test.csvimport.api
+Bundle-Version: 1.0.0
+Export-Package:\
+	com.test.csvimport.exception,\
+	com.test.csvimport.model,\
+	com.test.csvimport.service,\
+	com.test.csvimport.service.persistence
+-includeresource: META-INF/service.xml=../csv-import-module-service/service.xml

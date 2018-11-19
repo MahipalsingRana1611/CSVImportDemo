@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+
+<model-hints>
+	<model name="com.test.csvimport.model.Goods">
+		<field name="uuid" type="String" />
+		<field name="id" type="long" />
+		<field name="name" type="String">
+			<hint name="max-length">512</hint>
+		</field>
+		<field name="description" type="String">
+			<hint name="max-length">8192</hint>
+		</field>
+		<field name="length" type="double" />
+		<field name="height" type="double" />
+		<field name="area" type="double" />
+		<field name="nr" type="String">
+			<hint name="max-length">8192</hint>
+		</field>
+	</model>
+</model-hints>

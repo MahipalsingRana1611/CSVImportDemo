@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" default-destroy-method="destroy" default-init-method="afterPropertiesSet" xsi:schemaLocation=" http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+	<bean class="com.test.csvimport.service.impl.GoodsLocalServiceImpl" id="com.test.csvimport.service.GoodsLocalService" />
+	<bean class="com.test.csvimport.service.impl.GoodsServiceImpl" id="com.test.csvimport.service.GoodsService" />
+	<bean class="com.test.csvimport.service.persistence.impl.GoodsPersistenceImpl" id="com.test.csvimport.service.persistence.GoodsPersistence" parent="basePersistence" />
+</beans>

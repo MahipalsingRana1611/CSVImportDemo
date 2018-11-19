@@ -1,0 +1,5 @@
+Bundle-Name: csv-import-module-service
+Bundle-SymbolicName: com.test.csvimport.service
+Bundle-Version: 1.0.0
+Liferay-Require-SchemaVersion: 1.0.0
+Liferay-Service: true
