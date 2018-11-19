@@ -1,6 +1,8 @@
 package com.test.csvimport.background.task;
 
 import java.io.Serializable;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import org.osgi.service.component.annotations.Component;
@@ -12,35 +14,47 @@ import com.liferay.portal.kernel.backgroundtask.BackgroundTaskResult;
 import com.liferay.portal.kernel.backgroundtask.BaseBackgroundTaskExecutor;
 import com.liferay.portal.kernel.backgroundtask.display.BackgroundTaskDisplay;
 import com.liferay.portal.kernel.backgroundtask.display.BackgroundTaskDisplayFactoryUtil;
+import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.model.UserNotificationDeliveryConstants;
+import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.UserNotificationEventLocalServiceUtil;
+import com.test.csvimport.constants.CSVDataImportPortletKeys;
+import com.test.csvimport.model.impl.GoodsImpl;
+import com.test.csvimport.service.GoodsLocalServiceUtil;
 
 /**
  * @author Rana
  *
  */
 @Component(immediate = true, property = {
-		"background.task.executor.class.name=com.inexture.csvimporter.background.task.executor.CustomBackgroundTaskExecutor" 
-		}, service = BackgroundTaskExecutor.class)
+		"background.task.executor.class.name=com.test.csvimport.background.task.CustomBackgroundTaskExecutor" }, service = BackgroundTaskExecutor.class)
 public class CustomBackgroundTaskExecutor extends BaseBackgroundTaskExecutor {
-	public static final Log log = LogFactoryUtil.getLog(CustomBackgroundTaskExecutor.class);
+	public static final Log log = LogFactoryUtil.getLog(CustomBackgroundTaskExecutor.class.getName());
 
 	/**
-	 * Override execute method for save data
 	 * @param backgroundTask
 	 * @return BackgroundTaskResult
 	 */
 	@Override
 	public BackgroundTaskResult execute(BackgroundTask backgroundTask) throws Exception {
-		// taskContextMap which is sent by the caller
-		Map<String, Serializable> taskContextMap = backgroundTask.getTaskContextMap();
-
-		String title = taskContextMap.get("title").toString();
-		// TODO business logic for back ground task
-		log.info("Executing background task for "+title);
-		// Telling the system if, background task is successful or not
-		BackgroundTaskResult backgroundTaskResult = new BackgroundTaskResult(BackgroundTaskConstants.STATUS_SUCCESSFUL);
-		return backgroundTaskResult;
+		// Get context map from the background task to get context data
+		Map<String, Serializable> contextMap = backgroundTask.getTaskContextMap();
+		// Iterate over the list and save data to database
+		List<GoodsImpl> goodsDataList = (List<GoodsImpl>) contextMap.get("goodsDataList");
+		for (GoodsImpl goodsData : goodsDataList) {
+			GoodsLocalServiceUtil.saveGoods(goodsData);
+		}
+		// Generate notification to user for the successful task completion
+		generateNotification(Long.valueOf(contextMap.get("userId").toString()),
+				contextMap.get("notificationTitle").toString(), contextMap.get("notificationBody").toString(),
+				(ServiceContext) contextMap.get("serviceContext"));
+		// Get success result of background task
+		return new BackgroundTaskResult(BackgroundTaskConstants.STATUS_SUCCESSFUL);
 	}
 
 	@Override
@@ -56,5 +70,26 @@ public class CustomBackgroundTaskExecutor extends BaseBackgroundTaskExecutor {
 	@Override
 	public BackgroundTaskExecutor clone() {
 		return this;
+	}
+
+	/**
+	 * Generate the notification for completion of the import data task
+	 *
+	 * @param userId
+	 * @param reportTypeText
+	 * @throws PortalException
+	 * @throws SystemException
+	 */
+	private void generateNotification(long userId, String notificationTitle, String notificationBody,
+			ServiceContext serviceContext) throws PortalException, SystemException {
+		JSONObject payloadJSON = JSONFactoryUtil.createJSONObject();
+		payloadJSON.put("userId", userId);
+		payloadJSON.put("notificationTitle", notificationTitle);
+		payloadJSON.put("notificationBody", notificationBody);
+
+		UserNotificationEventLocalServiceUtil.addUserNotificationEvent(userId, CSVDataImportPortletKeys.CSVDataImport,
+				new Date().getTime(), UserNotificationDeliveryConstants.TYPE_WEBSITE, userId, payloadJSON.toString(),
+				false, serviceContext);
+		log.info("Notification generated for successful completion of task");
 	}
 }

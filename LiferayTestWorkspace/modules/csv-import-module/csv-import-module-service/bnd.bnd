@@ -3,3 +3,15 @@ Bundle-SymbolicName: com.test.csvimport.service
 Bundle-Version: 1.0.0
 Liferay-Require-SchemaVersion: 1.0.0
 Liferay-Service: true
+
+Bundle-ClassPath:\
+  .,\
+  META-INF/lib/opencsv-3.8.jar,\
+  META-INF/lib/commons-lang3-3.8.jar,\
+  META-INF/lib/commons-beanutils-1.9.3.jar
+  
+
+-includeresource:\
+  META-INF/lib/opencsv-3.8.jar=opencsv-3.8.jar,\
+  META-INF/lib/commons-lang3-3.8.jar=commons-lang3-3.8.jar,\
+  META-INF/lib/commons-beanutils-1.9.3.jar=commons-beanutils-1.9.3.jar  
