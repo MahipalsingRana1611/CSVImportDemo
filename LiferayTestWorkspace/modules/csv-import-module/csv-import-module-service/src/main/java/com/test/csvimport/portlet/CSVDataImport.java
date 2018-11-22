@@ -28,13 +28,15 @@ import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
 import javax.portlet.Portlet;
 import javax.portlet.PortletException;
+import javax.portlet.PortletRequestDispatcher;
 import javax.portlet.ResourceRequest;
 import javax.portlet.ResourceResponse;
 
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
-import com.liferay.portal.kernel.backgroundtask.BackgroundTask;
+import com.liferay.portal.background.task.model.BackgroundTask;
+import com.liferay.portal.background.task.service.BackgroundTaskLocalServiceUtil;
 import com.liferay.portal.kernel.backgroundtask.BackgroundTaskManager;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
@@ -49,6 +51,8 @@ import com.liferay.portal.kernel.servlet.SessionErrors;
 import com.liferay.portal.kernel.servlet.SessionMessages;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.upload.UploadPortletRequest;
+import com.liferay.portal.kernel.util.Constants;
+import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.opencsv.CSVParser;
@@ -66,13 +70,14 @@ import com.test.csvimport.service.GoodsLocalServiceUtil;
  *
  */
 @Component(immediate = true, property = { "com.liferay.portlet.display-category=category.development",
-		"com.liferay.portlet.instanceable=true", "javax.portlet.name=" + CSVDataImportPortletKeys.CSVDataImport,
+		"com.liferay.portlet.instanceable=true",
+		"javax.portlet.name=" + CSVDataImportPortletKeys.CSVDataImport,
 		"com.liferay.portlet.header-portlet-css=/css/datatables.min.css",
 		"com.liferay.portlet.header-portlet-css=/css/main.css",
 		"com.liferay.portlet.footer-portlet-javascript=/js/datatables.min.js",
-		"com.liferay.portlet.footer-portlet-javascript=/js/main.js", 
+		"com.liferay.portlet.footer-portlet-javascript=/js/main.js",
 		"javax.portlet.init-param.template-path=/",
-		"javax.portlet.init-param.view-template=/jsp/view.jsp", 
+		"javax.portlet.init-param.view-template=/jsp/view.jsp",
 		"javax.portlet.resource-bundle=content.Language",
 		"javax.portlet.security-role-ref=power-user,user",
 		"javax.portlet.display-name=CSVDataImport" }, service = Portlet.class)
@@ -91,12 +96,19 @@ public class CSVDataImport extends MVCPortlet {
 	@Override
 	public void serveResource(ResourceRequest resourceRequest, ResourceResponse resourceResponse)
 			throws IOException, PortletException {
-		// Get goods data
-		List<Goods> goodsList = GoodsLocalServiceUtil.getGoodses(QueryUtil.ALL_POS, QueryUtil.ALL_POS);
-		JSONObject object = JSONFactoryUtil.createJSONObject();
-		object.put("data", goodsList);
-		resourceResponse.getWriter().write(object.toJSONString());
-		super.serveResource(resourceRequest, resourceResponse);
+		String cmd = ParamUtil.getString(resourceRequest, Constants.CMD);
+		log.debug("Excuting serveResource::" + cmd);
+		if (cmd.equals(Constants.IMPORT)) {
+			PortletRequestDispatcher portletRequestDispatcher = getPortletContext()
+					.getRequestDispatcher("/jsp/import_csv_processes.jsp");
+			portletRequestDispatcher.include(resourceRequest, resourceResponse);
+		} else {
+			// Get goods data
+			List<Goods> goodsList = GoodsLocalServiceUtil.getGoodses(QueryUtil.ALL_POS, QueryUtil.ALL_POS);
+			JSONObject object = JSONFactoryUtil.createJSONObject();
+			object.put("data", goodsList);
+			resourceResponse.getWriter().write(object.toJSONString());
+		}
 	}
 
 	/**
@@ -142,11 +154,12 @@ public class CSVDataImport extends MVCPortlet {
 		taskContextMap.put("notificationBody",
 				"Data imported successfully for the given csv file <b>" + upreq.getFileName("csvFileUpload") + "</b>");
 		taskContextMap.put("goodsDataList", new ArrayList<GoodsImpl>(goodsDataList));
+		taskContextMap.put("fileName", upreq.getFileName("csvFileUpload"));
 		taskContextMap.put("serviceContext", serviceContext);
 
 		try {
 			// Adding the job to liferay background manager
-			BackgroundTask backgroundTask = backgroundTaskmanager.addBackgroundTask(themeDisplay.getUserId(),
+			BackgroundTask backgroundTask = BackgroundTaskLocalServiceUtil.addBackgroundTask(themeDisplay.getUserId(),
 					themeDisplay.getScopeGroupId(), CustomBackgroundTaskExecutor.class.getName(),
 					CustomBackgroundTaskExecutor.class.getName(), taskContextMap,
 					ServiceContextFactory.getInstance(actionRequest));
